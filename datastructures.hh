@@ -8,6 +8,12 @@
 #include <utility>
 #include <limits>
 #include <source_location>
+#include <unordered_map>
+#include <algorithm>
+#include <map>
+#include <queue>
+#include <functional>
+#include <set>
 
 // Type for beacon IDs
 using BeaconID = std::string;
@@ -104,6 +110,13 @@ private:
 };
 
 // This is the class you are supposed to implement
+struct Beacon {
+  Name name;
+  Coord coord;
+  Color color;
+  BeaconID target = NO_BEACON;
+  std::vector<BeaconID> sources;
+};
 
 class Datastructures
 {
@@ -113,97 +126,105 @@ public:
 
     // A operations
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(1) average
+    // Short rationale for estimate:add_beacon first checks whether the ID already exists using unordered_map::contains, which is O(1) average.
+    // Inserting a new element with operator[] is also O(1) average. Therefore, the whole operation runs in constant average time O(1)
     bool add_beacon(BeaconID id, Name const& name, Coord xy, Color color);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(1)
+    // Short rationale for estimate:the map tracks its size without needing to traverse elements.
     int beacon_count();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Each stored element must be destroyed, but no rehashing or lookup is required.
+    //After clearing, the container size becomes zero.
     void clear_beacons();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: The function just loop throught the unordered map once
     std::vector<BeaconID> all_beacons();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance:O(1)
+    // Short rationale for estimate: It runs in average O(1) time because the hash map jumps directly to the data location
     Name get_name(BeaconID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance:O(1)
+    // Short rationale for estimate: It runs in average O(1) time because the hash map jumps directly to the data location
     Coord get_coordinates(BeaconID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance:O(1)
+    // Short rationale for estimate: It runs in average O(1) time because the hash map jumps directly to the data location
     Color get_color(BeaconID id);
 
     // We recommend you implement the operations below only after implementing the ones above
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n log n)
+    // Short rationale for estimate: The function first copies all beacon IDs into a vector in O(n) time.
+    //It then sorts the vector using std::sort, which performs O(n log n) comparisons, and each comparison retrieves names in O(1) average time.
+    //Therefore, the total running time is dominated by the sorting step, giving O(n log n) overall.
     std::vector<BeaconID> beacons_alphabetically();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n log n)
+    // Short rationale for estimate: The function first copies all beacon IDs into a vector in O(n) time.
+    //It then sorts the vector using std::sort, which performs O(n log n) comparisons, and each comparison retrieves colorss in O(1) average time.
+    //Therefore, the total running time is dominated by the sorting step, giving O(n log n) overall.
     std::vector<BeaconID> beacons_brightness_increasing();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate:It only goes through one loop
     BeaconID min_brightness();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate:It only goes through one loop
     BeaconID max_brightness();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(N) to search +O(M log M) to sort (where M is the number of found beacons)
+    // Short rationale for estimate: O(N) to go through the data and O(M logM) to perform the sorting
     std::vector<BeaconID> find_beacons(Name const& name);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance:O(1)
+    // Short rationale for estimate: the algorithm find cost only O(1)
     bool change_beacon_name(BeaconID id, Name const& newname);
 
     // We recommend you implement the operations below only after implementing the ones above
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance:O(N)
+    // Short rationale for estimate: Due to the cycle detection loop.
     bool add_lightbeam(BeaconID sourceid, BeaconID targetid);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance:O(N)
+    // Short rationale for estimate: Only one loop through the data
     std::vector<BeaconID> get_lightsources(BeaconID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(N)
+    // Short rationale for estimate: Due to the loop oßf light rays
     std::vector<BeaconID> path_outbeam(BeaconID id);
 
     // B operations
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(N)
+    // Short rationale for estimate: using the concept of tree traversal
     std::vector<BeaconID> path_inbeam_longest(BeaconID id);
+    //helper function for pth_inbeam_longest
+    void find_longest_path(BeaconID ID, std::vector<BeaconID>& res, std::vector<BeaconID>& cur);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(N)
+    // Short rationale for estimate: It follows tree structure and constant work per node.
     Color total_color(BeaconID id);
 
-    // Estimate of performance:
+    // Estimate of performance: O(logN)
     // Short rationale for estimate:
     bool add_fibre(Coord xpoint1, Coord xpoint2, Cost cost);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(N)
+    // Short rationale for estimate: It loops through the data once
     std::vector<Coord> all_xpoints();
 
     // Estimate of performance:
     // Short rationale for estimate:
     std::vector<std::pair<Coord, Cost>> get_fibres_from(Coord xpoint);
 
-    // Estimate of performance:
+    // Estimate of performance: O(N logN)
     // Short rationale for estimate:
     std::vector<std::pair<Coord, Coord>> all_fibres();
 
@@ -217,7 +238,7 @@ public:
 
     // We recommend you implement the operations below only after implementing the ones above
 
-    // Estimate of performance:
+    // Estimate of performance: O(N logN)
     // Short rationale for estimate:
     std::vector<std::pair<Coord, Cost>> route_any(Coord fromxpoint, Coord toxpoint);
 
@@ -237,6 +258,12 @@ public:
 
 private:
     // Explain below your rationale for choosing the data structures you use in this class.
+
+    // The main datastructure will be an unordered map by Beacon ID as key.
+    // This is because the ID is unique and the structure provide fast look up for getting data
+    std::unordered_map<BeaconID,Beacon> beacons_;
+
+    std::map<Coord, std::vector<std::pair<Coord,Cost>>> fibers_;
 
     // Add stuff needed for your class implementation below
 
