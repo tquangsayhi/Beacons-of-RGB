@@ -1,5 +1,4 @@
 // Datastructures.cc
-// TEST SUBMISSION
 
 #include "datastructures.hh"
 
@@ -132,13 +131,11 @@ BeaconID Datastructures::min_brightness()
     for (const auto& pair : beacons_) {
         int current_val = pair.second.color.r * 3 + pair.second.color.g * 6 + pair.second.color.b;
 
-        // If we find a dimmer beacon, update our records
         if (current_val < min_val) {
             min_val = current_val;
             min_id = pair.first;
         }
     }
-
     return min_id;
 }
 
@@ -154,7 +151,6 @@ BeaconID Datastructures::max_brightness()
     for (const auto& pair : beacons_) {
         int current_val = pair.second.color.r * 3 + pair.second.color.g * 6 + pair.second.color.b;
 
-        // If we find a dimmer beacon, update our records
         if (current_val > max_val) {
             max_val = current_val;
             max_id = pair.first;
@@ -190,21 +186,21 @@ bool Datastructures::add_lightbeam(BeaconID sourceid, BeaconID targetid)
         auto source_iter = beacons_.find(sourceid);
         auto target_iter = beacons_.find(targetid);
 
-        // 1. Check if both exist
+        // Check if both exist
         if (source_iter == beacons_.end() || target_iter == beacons_.end()) {
             return false;
         }
 
-        // 2. Check if source is already sending light
+        // Check if source is already sending light
         if (source_iter->second.target != NO_BEACON) {
             return false;
         }
 
-        // 3. Prevent Self-Loops (A -> A)
+        // Prevent Self-Loops
         if (sourceid == targetid) {
             return false;
         }
-        // 4. Prevent indirect loop
+        // Prevent indirect loop
         BeaconID current_check = targetid;
         while (current_check != NO_BEACON)
         {
@@ -250,6 +246,7 @@ std::vector<BeaconID> Datastructures::path_inbeam_longest(BeaconID id)
     }
     std::vector<BeaconID> res;
     std::vector<BeaconID> cur;
+    // recursion - call
     find_longest_path(id,res,cur);
     std::reverse(res.begin(), res.end());
     return res;
@@ -405,21 +402,20 @@ void Datastructures::clear_fibres()
 
 std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord fromxy, Coord toxy)
 {
-    // 1. Validation
+    // Check for Validation
     if (fibers_.find(fromxy) == fibers_.end() || fibers_.find(toxy) == fibers_.end()) {
         return {};
     }
 
-    // 2. Data Structures
+    // Local Data Structures
     std::vector<std::pair<Coord, Cost>> path;
     std::set<Coord> visited;
 
-    // 3. DFS Lambda
-    // Args: Current Node, Cost of the edge we just traversed to get here
+    // DFS Lambda used as recursion
+    // Local variable: Current Node, Cost of the edge we just traversed to get here
     std::function<bool(Coord, Cost)> dfs =
         [&](Coord current, Cost edge_cost) -> bool
     {
-        // A. Calculate Cumulative Cost
         // If path is empty (start node), cost is 0.
         // Otherwise, take the last node's total + this edge weight.
         Cost current_total = 0;
@@ -427,16 +423,16 @@ std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord fromxy, Coo
             current_total = path.back().second + edge_cost; // FIXED: Used path.back()
         }
 
-        // B. Add to path and mark visited
+        // Add to path and mark visited
         visited.insert(current);
         path.push_back({current, current_total});
 
-        // C. Check Target
+        // Check Target
         if (current == toxy) {
-            return true; // Found it! Stop everything.
+            return true;
         }
 
-        // D. Explore Neighbors
+        // Explore Neighbors
         for (const auto& edge : fibers_[current]) {
             Coord neighbor = edge.first;
             Cost next_edge_weight = edge.second;
@@ -444,18 +440,16 @@ std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord fromxy, Coo
             // Only visit if not already visited
             if (visited.find(neighbor) == visited.end()) {
                 if (dfs(neighbor, next_edge_weight)) {
-                    return true; // Bubble up success
+                    return true;
                 }
             }
         }
 
-        // E. Backtracking
-        // If we get here, all neighbors failed. This is a dead end.
+        // If we get here, all neighbors failed.
         path.pop_back();
         return false;
     };
 
-    // 4. Start Logic
     // Start at 'fromxy' with an incoming edge cost of 0
     if (dfs(fromxy, 0)) {
         return path;
@@ -467,20 +461,18 @@ std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord fromxy, Coo
 
 std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord fromxy, Coord toxy)
 {
-    // 1. Validation: Check if start/end points exist
+    // Check Validation if start/end points exist
     if (fibers_.find(fromxy) == fibers_.end() || fibers_.find(toxy) == fibers_.end()) {
         return {};
     }
-    // 2. BFS Setup
+    // BFS Setup
     std::queue<Coord> q;
     q.push(fromxy);
 
-    // This map stores: "To get to Key, we came from Value".
+    // This map stores: key and its parent, where it came from
     // We also store the cost of that specific edge to make reconstruction easier.
     std::unordered_map<Coord, std::pair<Coord, Cost>,CoordHash> came_from;
 
-    // Mark start as visited by adding it to map with a "dummy" parent
-    // (We use fromxy as its own parent to mark the start)
     came_from[fromxy] = {fromxy, 0};
 
     bool found = false;
@@ -499,7 +491,7 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord fr
 
             // If neighbor not visited yet
             if (came_from.find(neighbor) == came_from.end()) {
-                came_from[neighbor] = {current, cost}; // Record path
+                came_from[neighbor] = {current, cost};
                 q.push(neighbor);
                 if (neighbor == toxy) {
                     found = true;
@@ -512,7 +504,8 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord fr
         }
     }
 
-    // 4. Path Reconstruction
+    // Path Reconstruction
+
     if (!found) {
         return {};
     }
@@ -526,7 +519,7 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord fr
         Coord parent = data.first;
         Cost cost = data.second;
 
-        route.push_back({curr,cost}); // Placeholder cost
+        route.push_back({curr,cost});
         curr = parent;
     }
     route.push_back({fromxy,0});
@@ -537,7 +530,7 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord fr
 
 std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord fromxpoint, Coord toxpoint)
 {
-    // 1. Validation: Check if points exist in the graph
+    // Validation: Check if points exist in the graph
     if (fibers_.find(fromxpoint) == fibers_.end() || fibers_.find(toxpoint) == fibers_.end()) {
         return {};
     }
@@ -545,37 +538,32 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord fromxpoi
     if (fromxpoint == toxpoint) {
          return {{fromxpoint, 0}};
     }
-    // 2. Dijkstra Setup
+    // Dijkstra Setup
     // Priority Queue: Stores {Cost, Coord}, ordered by smallest Cost first.
     using P = std::pair<Cost, Coord>;
     std::priority_queue<P, std::vector<P>, std::greater<P>> pq;
 
-    // CHANGED: Using std::map (Red-Black Tree) instead of unordered_map
-    // This is slightly slower (O(log V)) but requires no custom Hash struct.
     std::unordered_map<Coord, Cost, CoordHash> dist;
     std::unordered_map<Coord, Coord, CoordHash> parent;
 
     // Initialize start node
     dist[fromxpoint] = 0;
-    parent[fromxpoint] = fromxpoint; // Marking start as its own parent
+    parent[fromxpoint] = fromxpoint;
     pq.push({0, fromxpoint});
 
     bool found = false;
 
-    // 3. The Search Loop
+    // The Search Loop
     while (!pq.empty()) {
         Cost current_cost = pq.top().first;
         Coord current = pq.top().second;
         pq.pop();
 
-        // DIJKSTRA BREAK RULE:
-        // We can safely break ONLY when we pop the target from the queue.
         if (current == toxpoint) {
             found = true;
             break;
         }
 
-        // Optimization: "Stale Node" check
         // If the cost in the queue is worse than what we already found, skip it.
         if (current_cost > dist[current]) {
             continue;
@@ -590,7 +578,6 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord fromxpoi
 
             // Relaxation Step:
             // Check if we found a new node OR a shorter path to an existing node.
-            // .find() == end() acts as "Distance is Infinity"
             if (dist.find(neighbor) == dist.end() || new_dist < dist[neighbor]) {
                 dist[neighbor] = new_dist;
                 parent[neighbor] = current;
@@ -599,7 +586,8 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord fromxpoi
         }
     }
 
-    // 4. Path Reconstruction
+    // Path Reconstruction
+
     if (!found) {
         return {};
     }
@@ -609,7 +597,6 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord fromxpoi
 
     // Backtrack from End to Start
     while (curr != fromxpoint) {
-        // We store the cumulative cost directly from the 'dist' map
         route.push_back({curr, dist[curr]});
         curr = parent[curr];
     }
@@ -625,20 +612,19 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord fromxpoi
 
 std::vector<Coord> Datastructures::route_fibre_cycle(Coord startxy)
 {
-    // 1. Validation
+    // Validation
     if (fibers_.find(startxy) == fibers_.end()) {
         return {};
     }
 
-    // 2. Data Structures for DFS
+    //  Data Structures for DFS
     // 'path' stores the current route we are building
     std::vector<Coord> path;
 
     // 'visited' keeps track of nodes we have entered in the current search
-    // Using std::set allows O(log N) lookup without needing a custom hash
     std::set<Coord> visited;
 
-    // 3. The Recursive DFS (implemented as a Lambda for convenience)
+    // The Recursive DFS
     // Returns true if a cycle is found
     std::function<bool(Coord, Coord)> dfs =
         [&](Coord current, Coord parent) -> bool
@@ -646,50 +632,36 @@ std::vector<Coord> Datastructures::route_fibre_cycle(Coord startxy)
         visited.insert(current);
         path.push_back(current);
 
-        // REQUIREMENT: "traversed... in the direction of the smallest coordinates"
         // We must sort the neighbors before checking them.
-        auto neighbors = fibers_[current]; // Make a copy we can sort
+        auto neighbors = fibers_[current];
 
-        // Sort by Coordinate (Cost is ignored for the cycle check)
+        // Sort by Coordinate
         std::sort(neighbors.begin(), neighbors.end());
 
         for (const auto& edge : neighbors) {
             Coord neighbor = edge.first;
 
-            // CRITICAL: Don't go back along the fiber we just came from
             if (neighbor == parent) {
                 continue;
             }
 
-            // CHECK: Have we seen this node in our current path?
             if (visited.count(neighbor)) {
-                // CYCLE FOUND!
-                // We are trying to go to a node that is already in our 'visited' set
-                // and it's not our parent. This closes the loop.
-                path.push_back(neighbor); // Add the closing node
+                path.push_back(neighbor);
                 return true;
             }
 
             // If not visited, recurse deeper
             if (dfs(neighbor, current)) {
-                return true; // Cycle found deeper in the tree, bubble up
+                return true;
             }
         }
 
-        // BACKTRACKING:
-        // If we reach here, this path is a dead end.
-        // We remove 'current' from path and visited to allow other paths to use it (optional depending on exact cycle definition,
-        // but for "finding one cycle", standard DFS usually leaves visited true.
-        // However, strictly cleaning 'path' is required.)
         path.pop_back();
-        // Note: We usually keep 'visited' as true in general cycle detection to avoid re-scanning,
-        // but since we want a specific path, popping from 'path' is the key.
-
         return false;
     };
 
-    // 4. Start the Search
-    // We pass 'startxy' as current, and a dummy 'startxy' (or simple invalid coord) as parent
+    // Start the Search
+    // We pass 'startxy' as current, and a  virtual coord as parent
     // to ensure we don't crash on the first step.
     if (dfs(startxy, { 999999, 999999 })) {
         return path;

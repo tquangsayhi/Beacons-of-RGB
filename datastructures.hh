@@ -197,7 +197,7 @@ public:
     std::vector<BeaconID> get_lightsources(BeaconID id);
 
     // Estimate of performance: O(N)
-    // Short rationale for estimate: Due to the loop oßf light rays
+    // Short rationale for estimate: Due to the loop of light rays
     std::vector<BeaconID> path_outbeam(BeaconID id);
 
     // B operations
@@ -212,48 +212,55 @@ public:
     // Short rationale for estimate: It follows tree structure and constant work per node.
     Color total_color(BeaconID id);
 
-    // Estimate of performance: O(logN)
-    // Short rationale for estimate:
+    // Estimate of performance: O(1)
+    // Short rationale for estimate: The algorothm find costs only constant time as every Coord only shows up once in the data
     bool add_fibre(Coord xpoint1, Coord xpoint2, Cost cost);
 
     // Estimate of performance: O(N)
     // Short rationale for estimate: It loops through the data once
     std::vector<Coord> all_xpoints();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(D logD) (D is the number of connections attched to xpoint)
+    // Short rationale for estimate: This is strictly determined by the std::sort operation, which is computationally heavier than the lookup or copy steps.
     std::vector<std::pair<Coord, Cost>> get_fibres_from(Coord xpoint);
 
     // Estimate of performance: O(N logN)
-    // Short rationale for estimate:
+    // Short rationale for estimate: The function goes through the data once, which take O(N)
+    // However, the other sort cost O(N logN) in the end.
     std::vector<std::pair<Coord, Coord>> all_fibres();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(D) where D is the number of connections to the point
+    // Short rationale for estimate: std::remove_if must iterate through the entire list of connections (the vector) to find the specific target and then shift all subsequent elements to close the gap.
+    //Since this linear scan and shift must be performed for both endpoints, the operation's speed depends directly on how many connections those points have.
     bool remove_fibre(Coord xpoint1, Coord xpoint2);
 
-    // Estimate of performance:
+    // Estimate of performance: O(N)
     // Short rationale for estimate:
     void clear_fibres();
 
     // We recommend you implement the operations below only after implementing the ones above
 
-    // Estimate of performance: O(N logN)
-    // Short rationale for estimate:
+    // Estimate of performance: O((N + E) log N), where N is the number of coordinates (nodes) and E is the number of fibers (edges).
+    // Short rationale for estimate: Standard DFS is usually linear (O(N+E)), but because this implementation uses a std::set to track visited nodes, every check and insertion involves a tree search.
+    // This adds a logarithmic overhead (O(log N)) to every step of the traversal.
     std::vector<std::pair<Coord, Cost>> route_any(Coord fromxpoint, Coord toxpoint);
 
     // C operations
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(N + D) where N is the number of nodes (coordinates) and D is the number of fibers (edges)
+    // Short rationale for estimate: The function performs a standard Breadth-First Search, which ensures that each reachable node is enqueued and processed at most once
+    //Since came_from is implemented as a std::unordered_map, the operations to check and record visited nodes take constant time O(1)
     std::vector<std::pair<Coord, Cost>> route_least_xpoints(Coord fromxpoint, Coord toxpoint);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+     // Estimate of performance: O(N logN)
+    // Short rationale for estimate: The function uses Dijkstra method.
+    // The algorithm iterates through every fiber connection N) and potentially adds a new path to the priority queue.
+    //Since every insertion into the priority queue takes logarithmic time O(log N), the total time is simply the number of edges multiplied by the cost of the queue operation.
     std::vector<std::pair<Coord, Cost>> route_fastest(Coord fromxpoint, Coord toxpoint);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(N logN)
+    // Short rationale for estimate: This is driven by two logarithmic operations performed during the traversal:
+    //sorting the list of neighbors at every node, and using a std::set (a tree structure) to check if a node has been visited.
     std::vector<Coord> route_fibre_cycle(Coord startxpoint);
 
 private:
